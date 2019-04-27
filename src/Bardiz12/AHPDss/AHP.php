@@ -79,7 +79,7 @@ class AHP
 
     public function setCriteriaPairWise($criteria_name,array $matrix){
         $id = array_search($criteria_name,array_column($this->criterias,'name'));
-        if(!is_numeric($id)) throw new \ErrorException('Criteria \'style\' not found');
+        if(!is_numeric($id)) throw new \ErrorException('Criteria \''.$criteria_name.'\' not found');
 
         return $this->criterias[$id]['type'] == self::QUALITATIVE ? $this->setCriteriaPairWiseQualitative($criteria_name,$matrix) : $this->setCriteriaPairWiseQuantitative($criteria_name,$matrix);
     }
@@ -92,37 +92,43 @@ class AHP
         return $this;
     }
 
-    public function debug(){
-        echo "Kriteria : \n";
+    public function debug($print=true){
+        $deb = "Kriteria : \n";
         foreach($this->criterias as $i => $k){
             $k = (Object) $k;
-            echo $k->name." - ".$k->type."\n";;
+            $deb.= $k->name." - ".$k->type."\n";;
         }
-        echo "\nKandidat:\n";
+        $deb.= "\nKandidat:\n";
         foreach ($this->candidates as $key => $k) {
-            echo $k."\n";
+            $deb.= $k."\n";
         }
-        echo "\nMatriks Perbandingan Kriteria:\n";
+        $deb.= "\nMatriks Perbandingan Kriteria:\n";
         foreach ($this->relativeMatrix as $key => $m) {
             foreach ($m as $k => $m2) {
-                echo \number_format($m2,6)." ";
+                $deb.= \number_format($m2,6)." ";
             }
-            echo "\n";
+            $deb.= "\n";
         }
 
-        echo "\nPairWise Kriteria :\n";
+        $deb.= "\nPairWise Kriteria :\n";
         foreach($this->criteriaPairWise as $name => $c){
-            echo $name."\n";
+            $deb.= $name."\n";
             foreach ($c['matrix'] as $key => $value) {
-                foreach ($value as $k => $a) {
-                    echo \number_format($a,6)." ";
+                if(!is_array($value)){
+                    $deb.= $value." ";
+                }else{
+                    foreach ($value as $k => $a) {
+                        $deb.= \number_format($a,6)." ";
+                    }
                 }
-                echo \number_format($c['eigen'][$key],6)." ";
-                echo "\n";
+                $deb.= \number_format($c['eigen'][$key],6)." ";
+                $deb.= "\n";
             }
-            echo "Consistency Ratio = ".$c['cr'];
-            echo "\n\n";
+            $deb.= isset($c['cr']) ? "Consistency Ratio = ".$c['cr'] : '';
+            $deb.= "\n\n";
         }
+        if($print) echo $deb;
+        return $deb;
     }
 
     public function finalize(){
@@ -146,6 +152,7 @@ class AHP
         }
         $this->finalRanks = $ranks;
         $this->finalMatrix = $m1;
+        print_r($m1);
         return $this;
 
 
@@ -154,12 +161,14 @@ class AHP
     private function setCriteriaPairWiseQuantitative($criteria_name,array $matrix){
         if(count($matrix) != count($this->candidates)) throw new \ErrorException('Quantitative Pairwise should have matrix sized '.$size."x1");
         $tot = array_sum($matrix);
-        foreach ($matrix as $key => &$value) {
+        $matrix_eigen = [];
+        foreach ($matrix as $key => $value) {
             if(is_array($value)) throw new \ErrorException('Quantitative Pairwise should have matrix sized '.$size."x1");  
 
-            $value = $value / $tot;
+            $matrix_eigen[] = $value / $tot;
         }
-        $this->criteriaPairWise[$criteria_name]['eigen'] = $matrix;
+        $this->criteriaPairWise[$criteria_name]['eigen'] = $matrix_eigen;
+        $this->criteriaPairWise[$criteria_name]['matrix'] = $matrix;
         return $this;
     }
 
