@@ -152,7 +152,7 @@ class AHP
         }
         $this->finalRanks = $ranks;
         $this->finalMatrix = $m1;
-        print_r($m1);
+        //print_r($m1);
         return $this;
 
 
